@@ -1,0 +1,596 @@
+PRATT version 2.1 Documentation
+
+
+
+Written by:
+Inge Jonassen,
+inge@ii.uib.no
+
+Created: February 7th 1997
+
+Contents:
+
+   * What is new in version 2.1
+        o What was new in version 2.0?
+   * How to install
+
+  1. What is Pratt?
+        o 1.1 References
+        o 1.2 Pattern terminology
+  2. User manual.
+        o 2.1 Format of input sequences.
+        o 2.2 Command line.
+        o 2.3 Using the menu to control your search.
+             + The menu.
+        o 2.4 Controlling the search via command line options.
+        o 2.5 Recommendation.
+        o 2.6 If Pratt crashes.
+  3. Technical details.
+
+----------------------------------------------------------------------------
+
+New features in version 2.1:
+
+2.0 was the last major version of Pratt, in the 2.1 version only minor
+things have been added/changed. A few bugs in version 2.0 have been fixed in
+2.1. Inge Jonassen is grateful to Dr. John F. Collins, University of
+Edinburgh, who proposed many of the added features, and discovered many of
+the bugs.
+
+   * Command line search control -- the user can now choose values for all
+     parameters that are in the menu directly from the command line. This
+     makes it quicker for experienced user to specify his/her search, and
+     also makes it easier to call Pratt from inside other programs.
+   * When showing the sequence segments matching each pattern, the sequence
+     symbols matching non-wildcard positions (components) in the pattern,
+     are written in upper-case while sequence symbols matching wild-cards
+     are in lower-case. Also, gaps (-) are added to align the symbols
+     matching each pattern component.
+   * On-line help is available from the menu by typing "help <option>" where
+     option is one of the options in the menu or help for general help about
+     Pratt.
+   * Summary information about where the patterns match in the sequences is
+     written horizontally or vertically.
+   * The user can restrict where in the sequences patterns should be looked
+     for. This can be useful for example if the user knows some constraints
+     on the position of the patterns in one or more of the sequences.
+   * When using Pratt interactively (using the menu), some summary
+     information about the search parameters will be shown after the user
+     asks the search to be started, and the user is given the opportunity to
+     go back to the menu to change parameter values.
+
+What was new in version 2.0?
+
+In addition to the set S of protein sequences, the user can input:
+
+   * A multiple sequence alignment of some of the sequences in S, or of all
+     sequences in S, and Pratt will search only for patterns consistent with
+     the alignment.
+   * Input a special query sequence, and Pratt will search only for patterns
+     matching this sequence and some propotion of the other sequences.
+
+Branch-and-bound and heuristics have been added to make the pattern search
+more efficient. The speed-up is significant, in particular for sets of
+relatively similar (closely related) sequences.
+
+Pratt has integrated new pattern scoring mechanisms, including one taking
+into account the diversity of the sequences matching a pattern, and another
+taking into account the number of sequences matching each pattern.
+----------------------------------------------------------------------------
+
+How to install
+
+  1. Download Pratt2.1.tar from ftp-server ftp.ii.uib.no.
+  2. Extract the files from the tar-file:
+
+            $ tar -xvf Pratt2.1.tar
+
+  3. Compile and link:
+
+            $ make
+
+Hopefully this will give you an executable file pratt in the same directory.
+This version of Pratt has been tested successfully on Solaris 2.5 (Sun Ultra
+1 workstation), Linux (thanks to Jaak Vilo, University of Helsinki), and on
+Silicon Graphics workstations. The source code is ANSI C, so in principle it
+should be possible to compile and run it on any machine with an ANSI C
+compiler and preferrably some megabytes of memory.
+----------------------------------------------------------------------------
+
+1. What is Pratt?
+
+Pratt is a tool that allows the user to search for patterns conserved in a
+set of protein sequences. The user can specify what kind of patterns should
+be searched for, and how many sequences should match a pattern to be
+reported.
+
+1.1 References:
+
+  1. Finding flexible patterns in unaligned protein sequences.
+     Inge Jonassen, John F. Collins, Desmond Higgins.
+     Protein Science 1995;4(8):1587-1595.
+     Abstract
+  2. Efficient discovery of conserved patterns using a pattern graph.
+     Inge Jonassen.
+     Submitted to CABIOS.
+     PROSITE test cases.
+  3. Scoring function for pattern discovery programs taking into account
+     sequence diversity.
+     Inge Jonassen, Carsten Helgesen, Desmond Higgins.
+     Dept. of Informatics, Univ. of Bergen, Reports in Informatics no 116,
+     Febr. 1996 .
+     Postscript paper, Test cases.
+  4. Discovering patterns and subfamilies in biosequences.
+     A. Brazma, I. Jonassen, E. Ukkonen, and J. Vilo.
+     in Proceedings of the Fourth International Conference on Intellignent
+     Systems for Molecular Biology (ISMB-96), AAAI Press 1996, p 34-43.
+     More information is available.
+
+1.2 Pattern terminology
+
+Pratt is able to discover conserved patterns in the sequences.
+
+The patterns that can be found is a subset of the set of patterns that can
+be described using Prosite notation.
+
+A pattern that can be found by Pratt can be written on the form
+
+A(1)-x(i1,j1)-A2-x(i2,j2)-....A{p-1}-x(i{p-1},j{p-1})-Ap
+where
+
+   * A(k) is a component of the pattern, either specifying one amino acid,
+     e.g. C, or a set of amino acids, e.g. [ILVF].
+     A pattern component A(k) is an
+     identity component
+          if it specifies exactly one amino acid (for instance C or L),
+     ambiguous component
+          if it specifies more than one (for instance [ILVF] or [FWY]).
+
+   * i(k), j(k) are integers so that i(k)<=j(k) for all k. The part x(ik,jk)
+     specifies a wildcard region of the pattern matching between ik and jk
+     arbitrary amino acids.
+     A wildcard region x(ik,jk) is
+     flexible
+          if jk is bigger than ik (for example x(2,3). The flexibility of
+          such a region is jk-ik.br> For example the flexibility of x(2,3)
+          is 1.
+     fixed
+          if j(k) is equal to i(k), e.g., x(2,2) which can be written as
+          x(2).
+
+The product of flexibility for a pattern is the product of the flexibilities
+of the flexible wildcard regions in the pattern, if any, otherwise it is
+defined to be one.
+
+Examples:
+
+  1. C-x(2)-H is a pattern with two components (C and H) and one fixed
+     wildcard region. It matches any sequence containing a C followed by any
+     two arbitrary amino acids followed by an H. For example aaChgHyw and
+     liChgHlyw.
+  2. C-x(2,3)-H is a pattern with two components (C and H) and one flexible
+     wildcard region. It matches any sequence containing a C followed by any
+     two or three arbitrary amino acids followed by an H. For example
+     aaChgHywk and liChgaHlyw.
+  3. C-x(2,3)-[ILV] is a pattern with two components (C and [ILV]) and one
+     flexible wildcard region. It matches any sequence containing a C
+     followed by any two or three arbitrary amino acids followed by an I, L
+     or V.
+
+----------------------------------------------------------------------------
+
+2. User manual.
+
+2.1 Format of input sequences.
+
+Make a file or a set of files containing the set of sequences to be
+analysed. Currently, Pratt can read one of the formats:
+
+   * Fasta format. One file containing all the sequences. One sequence is
+     specified by
+        o one line starting with '>' in position 1 and then the name of the
+          sequence, and
+        o some lines containging the sequence in upper or lower case. The
+          end of a sequence is identified by looking for either the start of
+          a new sequence or the end of the file.
+        o Pratt does not allow for annotation in FastA format input files.
+   * SWISS-PROT format. One file containing all the sequences. One sequence
+     is specified by
+        o one line starting with 'ID' and then the name of the sequence,
+          followed by an arbitrary number of lines, and then
+        o a line starting with 'SQ' (rest of the line ignored), followed by
+          the sequence (on one or several lines), followed by a line
+          starting with '//'
+
+2.2 Command line.
+
+Command line:
+
+             Pratt <format> <filename> [options]
+
+where <format> is one of
+fasta
+swissprot
+and <filename> is
+the name of a file containing the sequences in the given format
+
+2.3 Using the menu to control your search.
+
+When you run Pratt, it will give you a menu allowing you to set a variety of
+parameters controlling:
+
+  1. what kind of patterns Pratt is going to look for,
+  2. how many sequences a pattern should match,
+  3. lower threshold on significance for a pattern to be reported, and
+  4. how many patterns should be reported.
+  5. greediness in search (new in version 2.0)
+  6. if a query sequence or an alignment is to be used (new in version 2.0)
+  7. if a pattern is restricted to match within a specified region in one or
+     several of the sequences (new in version 2.1).
+
+Schematic figure of algorithm used in Pratt version 2.x
+
+[Image]
+Overview of the pattern discovery algorithm. The user inputs a set unaligned
+sequences, and the minimum number of sequences to match a pattern. (i):
+During this phase, patterns are constrained to the pattern class defined by
+the bounds set using the menu. A pattern graph can be constructed either
+from the shortest sequences in S (1), from a special query sequence (2), or
+from a multiple sequence alignment (3). A search is done for the highest
+scoring patterns in the class that can be derived from the pattern graph.
+The block data structure is used to find all matches to each pattern. (ii):
+The highest scoring patterns found during this search, are input to a
+heuristic pattern refinement algorithm, where more ambiguous pattern
+components (from a list given by the user in Pratt.sets) can be added to the
+patterns found during phase (i). The refinement phase is optional.
+
+Sample run of Pratt version 2.1:
+
+
+------------------------------------------------------------
+                Pratt version 2.1, Sept. 1996
+                 Written by Inge Jonassen,
+                   University of Bergen
+                           Norway
+                   email: inge@ii.uib.no
+                 For more information, see
+            http://www.ii.uib.no/~inge/Pratt.html
+------------------------------------------------------------
+                        Please quote:
+             I.Jonassen, J.F.Collins, D.G.Higgins.
+             Protein Science 1995;4(8):1587-1595.
+                         I.Jonassen
+                     submitted to CABIOS
+------------------------------------------------------------
+
+
+
+                Pratt version 2.1
+
+        Analysing 166 sequences from file snake
+
+PATTERN CONSERVATION:
+   CM: min Nr of Seqs to Match                166
+   C%: min Percentage Seqs to Match         100.0
+
+PATTERN RESTRICTIONS :
+   PP: pos in seq [off,complete,start]        off
+   PL: max Pattern Length                      50
+   PN: max Nr of Pattern Symbols               50
+   PX: max Nr of consecutive x's                5
+   FN: max Nr of flexible spacers               2
+   FL: max Flexibility                          2
+   FP: max Flex.Product                        10
+   BI: Input Pattern Symbol File              off
+   BN: Nr of Pattern Symbols Initial Search    20
+
+PATTERN SCORING:
+   S: Scoring [info,mdl,tree,dist,ppv]       info
+
+SEARCH PARAMETERS:
+   G: Pattern Graph from [seq,al,query]       seq
+   E: Search Greediness                         3
+   R: Pattern Refinement                       on
+   RG: Generalise ambiguous symbols           off
+
+OUTPUT:
+   OF: Output Filename              snake.166.pat
+   OP: PROSITE Pattern Format                  on
+   ON: max number patterns                     50
+   OA: max number Alignments                   50
+   M: Print Patterns in sequences              on
+   MR: ratio for printing                      10
+   MV: print vertically                       off
+
+
+X: eXecute program
+Q: Quit
+
+help: for on-line help
+
+Command:
+
+C Options:
+
+     The C parameters control how many sequences a pattern should match to
+     be considered by Pratt:
+
+     CM:
+          Set the minimum number of sequences to match a pattern. Pratt will
+          only report patterns that match at least the chosen number of the
+          sequences that you have input. Pratt will not allow you to choose
+          a value higher than the number of sequences input.
+     C%:
+
+          set the minimum percentage of the input sequences that should
+          match a pattern. If you set this to, say 80, Pratt will only
+          report patterns matching at least 80 % of the sequences input.
+
+G Options:
+
+     Allows the use of an alignment or a query sequence to restrict the
+     pattern search.
+
+     If G is set to al or query, another option GF will appear allowing the
+     user to give the name of a file containing a multiple sequence
+     alignment (in Clustal W format), or a query sequence in FastA format
+     (without annotation).n Only patterns consistent with the
+     alignment/matching the query sequence will be considered.
+
+     Loosely a pattern is considered consistent with the alignment if
+        o each symbol in the pattern (e.g. A) corresponds to a ungapped
+          column in the alignment where all the characters match the pattern
+          symbol (in the example, A).
+        o the wildcards in the pattern are compatible with the number of
+          residues between the corresponding columns in the alignment.
+     For instance the pattern A-x(2,3)-B is consistent with the alignment
+
+        ALVGB
+        AG-LB
+        ALD-B
+
+     For more details see I. Jonassen
+     Efficient discovery of conserved patterns using a pattern graph.
+     Submitted to CABIOS
+
+B Options:
+
+     Using the B options (BN,BI,BF) on the menu you can control which
+     pattern symbols will be used during the initial pattern search and
+     during the refinement phase. In the pattern C-x(2)-[DE], C and [DE] are
+     the symbols.
+
+     The pattern symbols that can be used, are read from a file if the BI
+     option is set, otherwise a default set will be used.
+
+     The default set has as the 20 first elements, the single amino acid
+     symbols, and it also contains a set of ambiguous symbols, each
+     containing amino acids that share some physio-chemical properties
+
+     If BI is set, option BF will appear to allow you to give the name of
+     the file. In the file each symbol is given on a separate line
+     contatining the letters that the symbol should match. For instance the
+     file could be:
+
+     C
+     DE
+
+     and only patterns with the symbols C and [DE] would be considered.
+     During the initial search, pattern symbols corresponding to the first
+     BN lines can be used. Increasing BN will slow down the search and
+     increase the memory usage, but allow more ambiguous pattern symbols.
+
+P Options:
+
+     The P options are for controlling the patterns to be considered by
+     Pratt. See also the F options for controlling flexibility.
+
+     Option PL:
+          allows you to set the maximum length of a pattern. The length of
+          the pattern C-x(2,4)-[DE] is 1+4+1=6. The memory requirement of
+          Pratt depends on L; a higher L value gives higher memory
+          requirement.
+     Option PN:
+          using this you can set the maximum number of symbols in a pattern.
+          The pattern C-x(2,4)-[DE] has 2 symbols (C and [DE]). When PN is
+          increased, Pratt will require more memory.
+     Option PX:
+          Using this option you can set the maximum length of a wildcard.
+          Examples of wildcards and lengths are
+
+             x       -  1
+            x(10)    - 10
+           x(3,4)    -  4
+
+          Increasing PX will increase the time used by Pratt, and also
+          slightly the memory required.
+
+F Options:
+
+     The F options control flexible wildcards in the patterns:
+
+     Option FN:
+
+          Using this option you can set the maximum number of flexible
+          wildcards (matching a variable number of arbitrary sequence
+          symbols). For instance x(2,4) is a flexible wildcard, and the
+          pattern
+
+             C-x(2,4)-[DE]-x(10)-F
+
+          contains one flexible wildcard.
+
+          Increasing FN will increase the time used by Pratt.
+
+     Option FL:
+
+          you can set the maximum flexibility of a flexible wildcard
+          (matching a variable number of arbitrary sequence symbols). For
+          instance x(2,4) and x(10,12) has flexibility 2, and x(10) has
+          flexibility 0. Increasing FL will increase the time used by Pratt.
+
+     Option FP:
+
+          Using option FP you can set an upper limit on the product of a
+          flexibilities for a pattern. This is related to the memory
+          requirements of the search, and increasing the limit, increases
+          the memory usage. Some patterns and the corresponding product of
+          flexibilities:
+
+          C-x(2,4)-[DE]-x(10)-F      - (4-2+1)*(10-10+1)= 3
+          C-x(2,4)-[DE]-x(10-14)-F   - (4-2+1)*(14-10+1)= 3*5= 15
+
+Option E:
+     Using the E parameter you can adjust the greediness of the search.
+     Setting E to 0 (zero), the search will be exhaustive. Increasing E
+     increases the greediness, and decreases the time used in the search.
+
+Option R:
+     When the R option is switched on, patterns found during the initial
+     pattern search are input to a refinement algorithm where more ambiguous
+     pattern symbols can be added.
+
+     For instance the pattern
+
+         C-x(4)-D
+
+     might be refined to
+
+     C-x-[ILV]-x-D-x(3)-[DEF]
+
+     If the RG option is switched on, then ambiguous symbols listed in the
+     symbols file (or in the default symbol set -- see help for option B),
+     are used. If RG is off, only the letters needed to match the input
+     sequences are inlcuded in the ambiguous pattern positions.
+
+     For example, if [ILV] is a listed allowed symbol, and [IL] is not, [IL]
+     can be included in a pattern if RG is off, but if RG is on, the full
+     symbol [ILV] will be included instead.
+
+O Options:
+
+     The O options allow you to control the output from Pratt:
+
+     Option OF:
+          allows you to specify the name of the file to which Pratt will
+          write its output
+     Option OP:
+          when switched on, patterns will be output in PROSITE style (for
+          instance C-x(2,4)-[DE]). When switched off, patterns are output in
+          a simpler consensus pattern style (for instance Cxx--[DE] where x
+          matches exactly one arbitrary sequence symbol and - matches zero
+          or one arbitrary sequence symbol).
+     Option ON:
+          set the max. nr of patterns to be found by Pratt.
+     Option OA:
+          set the max. nr of patterns for which Pratt is to produce an
+          alignment of the sequence segments matching it.
+
+M Options:
+     If the M option is set, then Pratt will print out the location of the
+     sequence segments matching each of the (maximum 52) best patterns. The
+     patterns are given labels A, B,...Z,a,b,...z in order of decreasing
+     pattern score. Each sequence is printed on a line, one character per
+     K-tuple in the sequence. If pattern with label C matches the third
+     K-tuple in a sequence C is printed out. If several patterns match in
+     the same K-tuple, only the best will be printed.
+     Option MR:
+          sets the K value (ratio) used for printing the summary information
+          about where in each sequence the pattern matches are found.
+     Option MV:
+          if set, the output is printed vertically instead of horizontally,
+          vertical output can be better for large sequence sets.
+
+S Options:
+     The S option allows you to control the scoring of patterns. There are
+     five possible scoring schemes to be used:
+     info
+          patterns are scored by their information content as defined in
+          (Jonassen et al, 1995). Note that a pattern's score is independent
+          of which sequences it matches.
+     mdl
+          patterns are scored by a Minimum Description Length principle
+          derived scoring scheme, which is related to the one above, but
+          penalises patterns scoring few sequences vs. patterns scoring
+          many. Parameters Z0-Z3 appears when this scoring scheme is used.
+     tree
+          a pattern is scored higher if it contains more information and/or
+          if it matches more diverse sequences. The sequence diversity is
+          calculated from a dendrogram which has to be input.
+     dist
+          similar to the tree scoring, except a matrix with pairwise the
+          similarity between all pairs of input sequences are used instead
+          of the tree. The matrix has to be input.ppv - a measure of
+          Positive Predictive Value - it is assumed that the input sequences
+          consitute a family, and are all contained in the Swiss-Prot
+          database. PPV measures how certain one can be that a sequence
+          belongs to the family given that it matches the pattern.
+     For the last three scoring schemes, an input file is needed and option
+     SF appears allowing the user to set his own file name.
+
+Option X:
+     Exit the menu, and start the pattern discovery process.
+
+Option Q:
+     Quit Pratt without searching for patterns.
+
+Help Option:
+     Help is available on-line from the Pratt's menu. Just type help option
+     for help on a specific option from Pratt's menu.
+
+2.4 Controlling the search via command line options.
+
+All parameters whose values can be set using the menu can also be set from
+the command line. For parameters with numerical value (for example CM
+(minimum number of sequences to match a pattern) the value of this parameter
+is set by including -CM <value> in the command line. If this is the only
+parameter for which you wish to use a non-default value, your command line
+might look something like
+pratt fasta sequences -cm 20
+if you wish to look for patterns matching minimum 20 of the sequences in the
+file sequences (given in FastA format).
+
+For parameters swithchin on or off options, you should include on or off
+behind the option on the command line. For example if you do not want
+pattern refinement to be done, your command line might look like
+pratt fasta sequences -cm 20 -r off
+
+Nomally if you set some parameters using the command line, Pratt will just
+start the search using default values for the parameters that you have not
+set. If you want to see the menu as well, include -menu in the command line.
+
+2.5 Recommendation
+
+First run Pratt using a restrictive set of parameter values (for example the
+default parameters). If it finds a pattern you're happy with, then you're
+happy. If not, you can run Pratt again using a less restrictive set of
+parameters, in one of the following ways:
+
+  1. allow for more ambiguous symbols: Increase B.
+  2. allow for longer gaps: Increase W.
+  3. allow for more flexibilities: Increase N, F, P.
+  4. decrease the minimum number of sequences to match a pattern -- decrease
+     M.
+
+2.5 If Pratt crashes
+
+Pratt can crash if there is not enough (virtual) memory available on your
+machine. If this happens, you will usually gets a message about "assertion
+failed". If you cannot make more memory available (for example by running
+Pratt on another, more powerful machine), you should try and restrict the
+memory usage. This can be done by including fewer ambiguous positions, or by
+reducing the maximum number of pattern components, or by reducing the number
+of sequences. of sequences in the set. If Pratt fails for any other reason,
+and you want help, please mail copy of the data set on which Pratt crashed,
+and the set of parameters used (including all input files used in this
+particular run) to inge@ii.uib.no.
+
+----------------------------------------------------------------------------
+
+3. Technical details.
+
+Please consult the technical report describing Pratt version 2.0.
+
+
+
+    Homepage Pratt.
